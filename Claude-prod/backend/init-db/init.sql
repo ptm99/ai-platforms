@@ -1,5 +1,5 @@
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE users (
 );
 
 -- AI Providers table
-CREATE TABLE ai_providers (
+CREATE TABLE IF NOT EXISTS ai_providers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     display_name VARCHAR(100) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE ai_providers (
 );
 
 -- API Keys table
-CREATE TABLE api_keys (
+CREATE TABLE IF NOT EXISTS api_keys (
     id SERIAL PRIMARY KEY,
     provider_id INTEGER REFERENCES ai_providers(id) ON DELETE CASCADE,
     key_value VARCHAR(255) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE api_keys (
 );
 
 -- Projects table
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
     owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE projects (
 );
 
 -- Chat Sessions table
-CREATE TABLE chat_sessions (
+CREATE TABLE IF NOT EXISTS chat_sessions (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -58,7 +58,7 @@ CREATE TABLE chat_sessions (
 );
 
 -- Messages table
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     chat_session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE messages (
 );
 
 -- Permissions table
-CREATE TABLE permissions (
+CREATE TABLE IF NOT EXISTS permissions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     resource_type VARCHAR(20) NOT NULL,

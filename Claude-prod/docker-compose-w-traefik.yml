@@ -1,8 +1,25 @@
 version: '3.8'
 
 services:
+  traefik:
+    image: traefik
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ai-platform
+
   postgres:
-    image: postgres:17.3-alpine
+    image: postgres:18-alpine
     container_name: postgres
     restart: unless-stopped
     environment:
@@ -15,7 +32,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./backend/init-db:/docker-entrypoint-initdb.d
     networks:
-      - net0
+      - ai-platform
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aiplatform"]
       interval: 10s
@@ -36,7 +53,7 @@ services:
       DB_USER: aiplatform
       DB_PASSWORD: aiplatform123
       DB_NAME: aiplatform
-      JWT_SECRET: minhminhminh
+      JWT_SECRET: your-secret-key-change-in-production
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,28 +63,27 @@ services:
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
     networks:
-      - net0
+      - ai-platform
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: frontend
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - backend
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.frontend.rule=Host(`localhost`)"
-  #     - "traefik.http.routers.frontend.entrypoints=web"
-  #     - "traefik.http.services.frontend.loadbalancer.server.port=80"
-  #   networks:
-  #     - net0
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - ai-platform
 
 volumes:
   postgres-data:
 
 networks:
-  net0:
+  ai-platform:
     driver: bridge
-    external: true
