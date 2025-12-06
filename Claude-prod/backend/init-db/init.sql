@@ -91,8 +91,12 @@ CREATE INDEX idx_api_keys_status ON api_keys(status);
 CREATE INDEX idx_api_keys_usage ON api_keys(provider_id, usage_count, status);
 
 -- Insert default AI providers
-INSERT INTO ai_providers (name, display_name, api_endpoint) VALUES
-    ('chatgpt', 'ChatGPT', 'https://api.openai.com/v1/chat/completions'),
-    ('claude', 'Claude', 'https://api.anthropic.com/v1/messages'),
-    ('gemini', 'Gemini', 'https://generativelanguage.googleapis.com/v1/models'),
-    ('deepseek', 'DeepSeek', 'https://api.deepseek.com/v1/chat/completions');
+INSERT INTO ai_providers (name, display_name, api_endpoint, adapter_module) VALUES
+    ('chatgpt', 'ChatGPT', 'https://api.openai.com/v1/chat/completions', 'openai.js'),
+    ('claude', 'Claude', 'https://api.anthropic.com/v1/messages', 'anthropic.js'),
+    ('gemini', 'Gemini', 'https://generativelanguage.googleapis.com/v1/models', 'gemini.js'),
+    ('deepseek', 'DeepSeek', 'https://api.deepseek.com/v1/chat/completions', 'deepseek.js');
+
+INSERT INTO api_keys (provider_id, key_value) VALUES
+    (1, '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'),
+    (3, 'AIzaSyApEwFNnPYpPLJkXeab_vFWIxOGXhBb9ac');

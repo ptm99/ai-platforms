@@ -40,6 +40,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "3000:3000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
