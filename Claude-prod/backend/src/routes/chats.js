@@ -10,7 +10,7 @@ const { AppError } = require('../middleware/errorHandler');
 // All routes require authentication
 router.use(authenticate);
 
-// POST /api/projects/:projectId/chats - Create new chat in project
+// POST /api/chats/project/:projectId - Create new chat in project
 router.post('/project/:projectId', async (req, res, next) => {
   const client = await pool.connect();
   try {
@@ -20,8 +20,12 @@ router.post('/project/:projectId', async (req, res, next) => {
     const projectId = req.params.projectId;
     const { title, provider_id } = req.body;
 
+    console.log('Create chat request:', { userId, projectId, title, provider_id });
+
     // Check user has editor permission on project
     const permission = await requirePermission(userId, 'project', projectId, 'editor');
+
+    console.log('Permission check passed:', permission);
 
     if (!provider_id) {
       throw new AppError(400, 'validation_error', 'Provider ID is required');

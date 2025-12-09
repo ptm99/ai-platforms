@@ -73,9 +73,12 @@ const getProviderByName = async (providerName) => {
  * Main function to call any AI provider dynamically
  */
 const callAIProvider = async (providerName, apiKey, messages) => {
+  let provider;
+  let adapter;
+  
   try {
     // Get provider configuration from database
-    const provider = await getProviderByName(providerName);
+    provider = await getProviderByName(providerName);
 
     if (!provider.is_active) {
       throw new AppError(400, 'provider_inactive', 'This AI provider is currently inactive');
@@ -85,7 +88,7 @@ const callAIProvider = async (providerName, apiKey, messages) => {
     const AdapterClass = loadAdapter(provider.adapter_module);
     
     // Create adapter instance with provider config
-    const adapter = new AdapterClass(provider);
+    adapter = new AdapterClass(provider);
 
     // Build request
     const payload = adapter.buildRequestPayload(messages);
@@ -94,8 +97,13 @@ const callAIProvider = async (providerName, apiKey, messages) => {
     // Determine endpoint (some adapters may customize it)
     const endpoint = adapter.getEndpoint ? adapter.getEndpoint(apiKey) : adapter.endpoint;
 
+    console.log(`Calling ${providerName} API at ${endpoint}`);
+    console.log('Request payload:', JSON.stringify(payload, null, 2));
+
     // Make API request
     const response = await axios.post(endpoint, payload, { headers });
+
+    console.log(`${providerName} response received`);
 
     // Extract response and token count
     const content = adapter.extractResponse(response.data);
@@ -107,21 +115,38 @@ const callAIProvider = async (providerName, apiKey, messages) => {
     };
 
   } catch (error) {
+    console.error(`Error calling ${providerName}:`, error.message);
+    
     // If it's already an AppError, just rethrow
     if (error.error) {
       throw error;
     }
 
-    // Handle API errors through adapter
-    if (error.response) {
-      const provider = await getProviderByName(providerName);
-      const AdapterClass = loadAdapter(provider.adapter_module);
-      const adapter = new AdapterClass(provider);
+    // Handle API errors through adapter if we have one
+    if (error.response && adapter) {
       adapter.handleError(error);
     }
 
+    // Handle network or other errors
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+      
+      console.error(`API Error (${status}):`, JSON.stringify(data, null, 2));
+      
+      throw new AppError(
+        status,
+        'api_error',
+        data?.error?.message || data?.message || `${providerName} API error: ${error.message}`
+      );
+    }
+
     // Network or other errors
-    throw new AppError(503, 'service_unavailable', `Failed to communicate with ${providerName}`);
+    throw new AppError(
+      503, 
+      'service_unavailable', 
+      `Failed to communicate with ${providerName}: ${error.message}`
+    );
   }
 };
 

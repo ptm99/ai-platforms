@@ -40,10 +40,10 @@ router.get('/', async (req, res, next) => {
 });
 
 // Admin routes for managing API keys
-// Note: In production, add proper admin authentication middleware
+// All routes below require admin authentication
 
 // POST /api/providers/keys - Add new API key (Admin only)
-router.post('/keys', async (req, res, next) => {
+router.post('/keys', authenticate.requireAdmin, async (req, res, next) => {
   try {
     const { provider_id, key_value } = req.body;
 
@@ -68,7 +68,7 @@ router.post('/keys', async (req, res, next) => {
 });
 
 // GET /api/providers/keys - List all API keys (Admin only)
-router.get('/keys', async (req, res, next) => {
+router.get('/keys', authenticate.requireAdmin, async (req, res, next) => {
   try {
     const result = await pool.query(
       `SELECT 
@@ -96,7 +96,7 @@ router.get('/keys', async (req, res, next) => {
 });
 
 // PUT /api/providers/keys/:id - Update key status (Admin only)
-router.put('/keys/:id', async (req, res, next) => {
+router.put('/keys/:id', authenticate.requireAdmin, async (req, res, next) => {
   try {
     const keyId = req.params.id;
     const { status } = req.body;
@@ -127,7 +127,7 @@ router.put('/keys/:id', async (req, res, next) => {
 });
 
 // DELETE /api/providers/keys/:id - Delete API key (Admin only)
-router.delete('/keys/:id', async (req, res, next) => {
+router.delete('/keys/:id', authenticate.requireAdmin, async (req, res, next) => {
   try {
     const keyId = req.params.id;
 

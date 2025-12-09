@@ -1,27 +1,47 @@
-version: '3.8'
+# version: '3.8'
 
 services:
+  # Traefik - Reverse Proxy & Load Balancer
+  # traefik:
+  #   image: traefik
+  #   container_name: traefik
+  #   restart: unless-stopped
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entrypoints.web.address=:80"
+  #   ports:
+  #     - "80:80"          # HTTP
+  #     - "8080:8080"      # Traefik Dashboard
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - net0
+
+  # PostgreSQL Database
   postgres:
-    image: postgres:17.3-alpine
+    image: postgres:18.1-alpine
     container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: aiplatform
-      POSTGRES_PASSWORD: aiplatform123
+      POSTGRES_PASSWORD: minh
       POSTGRES_DB: aiplatform
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./backend/init-db:/docker-entrypoint-initdb.d
     networks:
       - net0
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aiplatform"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Backend API (Node.js + Express)
   backend:
     build:
       context: ./backend
@@ -34,37 +54,40 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: aiplatform
-      DB_PASSWORD: aiplatform123
+      DB_PASSWORD: minh
       DB_NAME: aiplatform
       JWT_SECRET: minhminhminh
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    networks:
+      - net0
     labels:
       - "traefik.enable=true"
+      # Backend API routes (anything starting with /api)
       - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
+
+  # Frontend (React + Vite, served by Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
     networks:
       - net0
-
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: frontend
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - backend
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.frontend.rule=Host(`localhost`)"
-  #     - "traefik.http.routers.frontend.entrypoints=web"
-  #     - "traefik.http.services.frontend.loadbalancer.server.port=80"
-  #   networks:
-  #     - net0
+    labels:
+      - "traefik.enable=true"
+      # Frontend routes (everything except /api)
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      # Note: Backend has higher priority due to PathPrefix specificity
 
 volumes:
   postgres-data:

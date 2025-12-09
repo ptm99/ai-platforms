@@ -11,9 +11,10 @@ class DeepSeekAdapter extends BaseAdapter {
 
   buildRequestPayload(messages) {
     return {
-      model: this.modelName,
+      model: this.modelName || 'deepseek-chat',
       messages: this.transformMessages(messages),
-      temperature: this.config.temperature || 0.7
+      temperature: this.config.temperature || 0.7,
+      max_tokens: this.config.max_tokens || 1000
     };
   }
 
@@ -25,6 +26,9 @@ class DeepSeekAdapter extends BaseAdapter {
   }
 
   extractResponse(responseData) {
+    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
+      throw new Error('Invalid response format from DeepSeek');
+    }
     return responseData.choices[0].message.content;
   }
 

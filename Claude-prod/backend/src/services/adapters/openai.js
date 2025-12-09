@@ -2,7 +2,7 @@ const BaseAdapter = require('./BaseAdapter');
 
 class OpenAIAdapter extends BaseAdapter {
   transformMessages(messages) {
-    // OpenAI format: [{ role: 'user', content: '...' }, ...]
+    // OpenAI format: [{ role: 'user'/'assistant'/'system', content: '...' }]
     return messages.map(m => ({
       role: m.role,
       content: m.content
@@ -11,9 +11,10 @@ class OpenAIAdapter extends BaseAdapter {
 
   buildRequestPayload(messages) {
     return {
-      model: this.modelName,
+      model: this.modelName || 'gpt-3.5-turbo',
       messages: this.transformMessages(messages),
-      temperature: this.config.temperature || 0.7
+      temperature: this.config.temperature || 0.7,
+      max_tokens: this.config.max_tokens || 1000
     };
   }
 
@@ -25,6 +26,9 @@ class OpenAIAdapter extends BaseAdapter {
   }
 
   extractResponse(responseData) {
+    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
+      throw new Error('Invalid response format from OpenAI');
+    }
     return responseData.choices[0].message.content;
   }
 

@@ -4,9 +4,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
 
 // Generate JWT token
-const generateToken = (userId, username) => {
+const generateToken = (userId, username, isAdmin = false) => {
   return jwt.sign(
-    { userId, username },
+    { userId, username, isAdmin },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );

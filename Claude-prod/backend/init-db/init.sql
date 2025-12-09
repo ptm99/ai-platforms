@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(100),
+    is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -92,11 +93,71 @@ CREATE INDEX idx_api_keys_usage ON api_keys(provider_id, usage_count, status);
 
 -- Insert default AI providers
 INSERT INTO ai_providers (name, display_name, api_endpoint, adapter_module) VALUES
-    ('chatgpt', 'ChatGPT', 'https://api.openai.com/v1/chat/completions', 'openai.js'),
-    ('claude', 'Claude', 'https://api.anthropic.com/v1/messages', 'anthropic.js'),
-    ('gemini', 'Gemini', 'https://generativelanguage.googleapis.com/v1/models', 'gemini.js'),
-    ('deepseek', 'DeepSeek', 'https://api.deepseek.com/v1/chat/completions', 'deepseek.js');
+    ('chatgpt', 'ChatGPT', 'https://api.openai.com/v1/chat/completions', 'openai'),
+    ('claude', 'Claude', 'https://api.anthropic.com/v1/messages', 'anthropic'),
+    ('gemini', 'Gemini', 'https://generativelanguage.googleapis.com/v1/models', 'gemini'),
+    ('deepseek', 'DeepSeek', 'https://api.deepseek.com/v1/chat/completions', 'deepseek');
 
 INSERT INTO api_keys (provider_id, key_value) VALUES
     (1, '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'),
     (3, 'AIzaSyApEwFNnPYpPLJkXeab_vFWIxOGXhBb9ac');
+
+-- Update AI Providers with Optimal Configurations
+-- Run this to fix provider settings
+
+-- OpenAI (ChatGPT)
+-- Temperature: 0.7 (balanced creativity)
+-- Max tokens: 2000 (longer responses)
+UPDATE ai_providers 
+SET config = '{
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "top_p": 1.0,
+  "frequency_penalty": 0,
+  "presence_penalty": 0
+}'::jsonb
+WHERE name = 'chatgpt';
+
+-- Anthropic (Claude)
+-- Max tokens: 4096 (Claude can handle long responses)
+-- Temperature: 0.7
+UPDATE ai_providers 
+SET config = '{
+  "max_tokens": 4096,
+  "temperature": 0.7,
+  "top_p": 0.9
+}'::jsonb
+WHERE name = 'claude';
+
+-- Google (Gemini)
+-- Temperature: 0.7
+-- Max output tokens: 2048
+-- Top P: 0.95 (slightly higher for creativity)
+UPDATE ai_providers 
+SET config = '{
+  "temperature": 0.7,
+  "max_output_tokens": 2048,
+  "top_p": 0.95,
+  "top_k": 40
+}'::jsonb
+WHERE name = 'gemini';
+
+-- DeepSeek
+-- Temperature: 0.7
+-- Max tokens: 2000
+UPDATE ai_providers 
+SET config = '{
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "top_p": 0.95
+}'::jsonb
+WHERE name = 'deepseek';
+
+-- Verify the updates
+-- SELECT 
+--   name,
+--   display_name,
+--   model_name,
+--   config
+-- FROM ai_providers
+-- ORDER BY id;
