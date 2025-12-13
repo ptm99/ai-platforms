@@ -1,0 +1,52 @@
+http:
+  middlewares:
+    # Global security headers (HSTS, CSP, etc.)
+    security-headers:
+      headers:
+        sslRedirect: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "no-referrer"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          # Very strict example CSP; you may relax as needed
+          Content-Security-Policy: "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'none';"
+
+          # Permissions-Policy replaces Feature-Policy
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
+    # Backend CORS (API)
+    backend-cors:
+      headers:
+        accessControlAllowOrigin: "*"
+        accessControlAllowMethods:
+          - "GET"
+          - "POST"
+          - "OPTIONS"
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+        addVaryHeader: true
+
+    # Backend rate limiting (protect API from abuse)
+    backend-ratelimit:
+      rateLimit:
+        average: 100      # 100 req/s per client
+        burst: 50         # allow small bursts
+
+    # Frontend rate limiting (usually more relaxed)
+    frontend-ratelimit:
+      rateLimit:
+        average: 200
+        burst: 100
+
+    # HTTP → HTTPS redirect used by plain HTTP routers
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true

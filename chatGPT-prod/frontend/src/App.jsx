@@ -1,5 +1,5 @@
 import React,{useState,useEffect} from 'react';
-import API,{setAuth} from './api';
+import API,{setAuth} from './api.js';
 export default function App(){
   const[token,setToken]=useState(localStorage.getItem('token'));
   const[projects,setProjects]=useState([]);
